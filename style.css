@@ -1,0 +1,113 @@
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Toggle button */
+#toggle-mode {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #444;
+  color: white;
+  border: none;
+  padding: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  border-radius: 5px;
+  z-index: 1000;
+}
+
+#note-container {
+  position: relative;
+  width: 100%;
+  height: 80vh;
+  margin-top: 20px;
+  border: 2px dashed #ccc;
+  transition: border-color 0.3s;
+}
+
+.note {
+  width: 150px;
+  height: 150px;
+  padding: 10px;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.3);
+  position: absolute; /* needed for dragging */
+  cursor: grab;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.note textarea {
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  resize: none;
+  font-size: 14px;
+  color: inherit;
+}
+
+.note button {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: red;
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* Light mode colors */
+body.light-mode {
+  background-color: #f0f0f0;
+  color: #000;
+}
+
+#note-container.light-mode {
+  border-color: #ccc;
+}
+
+/* Sticky note colors for light mode */
+.note-yellow {
+  background-color: #fffa65; /* yellow */
+  color: #000;
+}
+
+.note-green {
+  background-color: #a8e6cf; /* green */
+  color: #000;
+}
+
+.note-pink {
+  background-color: #ffb6c1; /* pink */
+  color: #000;
+}
+
+/* Dark mode colors */
+body.dark-mode {
+  background-color: #1e1e1e;
+  color: #f0f0f0;
+}
+
+#note-container.dark-mode {
+  border-color: #555;
+}
+
+/* Dark mode sticky notes */
+.note-dark-blue {
+  background-color: #1e3a8a; /* blue */
+  color: #f0f0f0;
+}
+
+.note-dark-purple {
+  background-color: #5b2c6f; /* purple */
+  color: #f0f0f0;
+}
+
+.note-dark-orange {
+  background-color: #d35400; /* dark orange */
+  color: #f0f0f0;
+}
