@@ -1,58 +1,21 @@
-const container = document.getElementById('note-container');
-const addBtn = document.getElementById('add-note');
-const toggleBtn = document.getElementById('toggle-mode');
+const container = document.getElementById('container');
+const addNoteBtn = document.getElementById('addNote');
+const toggleBtn = document.getElementById('toggleMode');
 
-// Load dark/light mode from localStorage
-let darkMode = JSON.parse(localStorage.getItem('darkMode')) || false;
-setMode(darkMode);
+let darkMode = false;
 
-// Load saved notes from localStorage
-let notesData = JSON.parse(localStorage.getItem('notes')) || [];
-notesData.forEach(data => createNote(data.content, data.top, data.left, data.colorClass));
-
-addBtn.addEventListener('click', () => {
-  createNote('', Math.random() * 300, Math.random() * 300);
-  saveNotes();
-});
-
-toggleBtn.addEventListener('click', () => {
-  darkMode = !darkMode;
+// Load notes from localStorage when page loads
+window.onload = () => {
+  const savedMode = localStorage.getItem('darkMode');
+  darkMode = savedMode === 'true';
   setMode(darkMode);
-  localStorage.setItem('darkMode', JSON.stringify(darkMode));
-});
 
-function setMode(isDark) {
-  if (isDark) {
-    document.body.classList.add('dark-mode');
-    document.body.classList.remove('light-mode');
-    container.classList.add('dark-mode');
-    container.classList.remove('light-mode');
-    toggleBtn.textContent = '☀️';
-    document.querySelectorAll('.note').forEach(note => {
-      // Assign random dark color for each note
-      const darkColors = ['note-dark-blue', 'note-dark-purple', 'note-dark-orange'];
-      const randomDark = darkColors[Math.floor(Math.random() * darkColors.length)];
-      note.classList.remove('note-yellow', 'note-green', 'note-pink', 'note-dark-blue', 'note-dark-purple', 'note-dark-orange');
-      note.classList.add(randomDark);
-      note.dataset.colorClass = randomDark;
-    });
-  } else {
-    document.body.classList.add('light-mode');
-    document.body.classList.remove('dark-mode');
-    container.classList.add('light-mode');
-    container.classList.remove('dark-mode');
-    toggleBtn.textContent = '🌙';
-    document.querySelectorAll('.note').forEach(note => {
-      // Restore original color if stored in localStorage
-      const colorClass = note.dataset.colorClass;
-      note.classList.remove('note-dark-blue', 'note-dark-purple', 'note-dark-orange', 'note-yellow', 'note-green', 'note-pink');
-      note.classList.add(colorClass);
-    });
-  }
-}
+  const savedNotes = JSON.parse(localStorage.getItem('notes')) || [];
+  savedNotes.forEach(note => createNote(note.text, note.x, note.y, note.colorClass));
+};
 
-// Function to create a note
-function createNote(content, top, left, savedColor) {
+// Create a new note
+function createNote(text = '', x = 50, y = 50, savedColor = null) {
   const note = document.createElement('div');
   note.classList.add('note');
 
@@ -65,67 +28,113 @@ function createNote(content, top, left, savedColor) {
     const lightColors = ['note-yellow', 'note-green', 'note-pink'];
     colorClass = savedColor || lightColors[Math.floor(Math.random() * lightColors.length)];
   }
+
   note.classList.add(colorClass);
-  note.dataset.colorClass = colorClass; // save color for localStorage
+  note.dataset.colorClass = colorClass;
 
-  note.innerHTML = `
-    <textarea>${content}</textarea>
-    <button>×</button>
-  `;
+  note.style.left = `${x}px`;
+  note.style.top = `${y}px`;
 
-  // Set position
-  note.style.top = top + "px";
-  note.style.left = left + "px";
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  note.appendChild(textarea);
 
   container.appendChild(note);
 
-  const textarea = note.querySelector('textarea');
+  makeDraggable(note);
 
-  // Delete button
-  note.querySelector('button').addEventListener('click', () => {
-    container.removeChild(note);
-    saveNotes();
-  });
-
-  // Update content on change
+  // Save on typing
   textarea.addEventListener('input', saveNotes);
-
-  // Drag functionality
-  let offsetX, offsetY, isDragging = false;
-
-  note.addEventListener('mousedown', (e) => {
-    if (e.target.tagName === 'TEXTAREA') return;
-    isDragging = true;
-    offsetX = e.clientX - note.offsetLeft;
-    offsetY = e.clientY - note.offsetTop;
-    note.style.cursor = 'grabbing';
-  });
-
-  document.addEventListener('mousemove', (e) => {
-    if (!isDragging) return;
-    note.style.left = (e.clientX - offsetX) + "px";
-    note.style.top = (e.clientY - offsetY) + "px";
-  });
-
-  document.addEventListener('mouseup', () => {
-    if (isDragging) {
-      isDragging = false;
-      note.style.cursor = 'grab';
-      saveNotes();
-    }
-  });
 }
 
-// Save notes content, position, and color to localStorage
+// Make notes draggable
+function makeDraggable(note) {
+  let isDragging = false;
+  let offsetX, offsetY;
+
+  note.addEventListener('mousedown', startDrag);
+  note.addEventListener('touchstart', startDrag);
+
+  function startDrag(e) {
+    isDragging = true;
+    note.style.zIndex = 1000;
+    const rect = note.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    offsetX = clientX - rect.left;
+    offsetY = clientY - rect.top;
+
+    document.addEventListener('mousemove', onDrag);
+    document.addEventListener('mouseup', stopDrag);
+    document.addEventListener('touchmove', onDrag);
+    document.addEventListener('touchend', stopDrag);
+  }
+
+  function onDrag(e) {
+    if (!isDragging) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    note.style.left = `${clientX - offsetX}px`;
+    note.style.top = `${clientY - offsetY}px`;
+  }
+
+  function stopDrag() {
+    isDragging = false;
+    note.style.zIndex = '';
+    document.removeEventListener('mousemove', onDrag);
+    document.removeEventListener('mouseup', stopDrag);
+    document.removeEventListener('touchmove', onDrag);
+    document.removeEventListener('touchend', stopDrag);
+    saveNotes();
+  }
+}
+
+// Save notes to localStorage
 function saveNotes() {
-  const notes = [];
-  document.querySelectorAll('.note').forEach(note => {
-    notes.push({
-      content: note.querySelector('textarea').value,
-      top: parseFloat(note.style.top),
-      left: parseFloat(note.style.left),
+  const notes = Array.from(document.querySelectorAll('.note')).map(note => {
+    const textarea = note.querySelector('textarea');
+    return {
+      text: textarea.value,
+      x: parseInt(note.style.left),
+      y: parseInt(note.style.top),
       colorClass: note.dataset.colorClass
-    });
+    };
   });
   localStorage.setItem('notes', JSON.stringify(notes));
+  localStorage.setItem('darkMode', darkMode);
 }
+
+// Set dark/light mode
+function setMode(isDark) {
+  darkMode = isDark;
+  document.body.classList.toggle('dark-mode', isDark);
+  document.body.classList.toggle('light-mode', !isDark);
+  toggleBtn.textContent = isDark ? '☀️' : '🌙';
+  localStorage.setItem('darkMode', darkMode);
+
+  // Recolor all notes
+  document.querySelectorAll('.note').forEach(note => {
+    note.classList.remove('note-yellow', 'note-green', 'note-pink',
+                          'note-dark-blue', 'note-dark-purple', 'note-dark-orange');
+    const newColors = isDark
+      ? ['note-dark-blue', 'note-dark-purple', 'note-dark-orange']
+      : ['note-yellow', 'note-green', 'note-pink'];
+    const newColor = newColors[Math.floor(Math.random() * newColors.length)];
+    note.classList.add(newColor);
+    note.dataset.colorClass = newColor;
+  });
+
+  saveNotes();
+}
+
+// Toggle mode button
+toggleBtn.addEventListener('click', () => {
+  darkMode = !darkMode;
+  setMode(darkMode);
+});
+
+// Add note button
+addNoteBtn.addEventListener('click', () => {
+  createNote();
+  saveNotes();
+});
